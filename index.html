@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจองคิวช่างภาพ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #32325d;
+            --secondary-color: #5e72e4;
+            --accent-color: #ff6b6b;
+            --light-gray: #f6f9fc;
+            --dark-gray: #8898aa;
+            --bg-color: #ffffff;
+            --border-radius: 12px;
+            --box-shadow: 0 7px 30px rgba(0, 0, 0, 0.09);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(to right, #485563, #29323c);
+            color: var(--primary-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        h1 {
+            font-weight: 600;
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            background: linear-gradient(45deg, var(--secondary-color), #8e44ad);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+        
+        h2 {
+            font-weight: 500;
+            border-bottom: 2px solid var(--light-gray);
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+
+        #calendar-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        #calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        #month-year {
+            font-size: 1.5em;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        #calendar-header button {
+            background: none;
+            border: none;
+            font-size: 1.8em;
+            cursor: pointer;
+            color: var(--secondary-color);
+            transition: transform 0.2s;
+        }
+        #calendar-header button:hover {
+            transform: scale(1.2);
+        }
+
+        #calendar-days, #calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+        }
+
+        .day, .date {
+            text-align: center;
+            padding: 15px 10px;
+            border-radius: var(--border-radius);
+        }
+
+        .day {
+            font-weight: 600;
+            color: var(--dark-gray);
+        }
+
+        .date {
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border: 1px solid transparent;
+        }
+        
+        .date:not(.empty):not(.past) {
+             border: 1px solid var(--light-gray);
+        }
+
+        .date.booked {
+            background-color: var(--accent-color);
+            color: white;
+            font-weight: 500;
+            position: relative;
+        }
+        .date.booked::after {
+            content: '';
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: white;
+        }
+
+        .date.today {
+            background-color: var(--secondary-color);
+            color: white;
+            font-weight: 500;
+        }
+
+        .date.past {
+            background-color: #ffdddd;
+            color: #d9534f;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+
+        .date:not(.past):not(.booked):hover {
+            background-color: var(--secondary-color);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        #booking-list {
+            margin-top: 20px;
+            display: grid;
+            gap: 15px;
+        }
+
+        .booking-item {
+            background-color: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            border-left: 5px solid var(--secondary-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .booking-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.1);
+        }
+        .booking-item strong {
+            color: var(--primary-color);
+        }
+        .booking-item hr {
+            border: none;
+            border-top: 1px solid var(--light-gray);
+            margin: 15px 0;
+        }
+        .booking-item button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-weight: 500;
+        }
+        .booking-item button:first-of-type {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        .booking-item button:last-of-type {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 30px;
+            border: none;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 550px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .close {
+            color: var(--dark-gray);
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            transition: color 0.2s;
+        }
+
+        .close:hover, .close:focus {
+            color: var(--primary-color);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        form label {
+            display: block;
+            margin-top: 15px;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        form input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        
+        form button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 20px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        form button:hover {
+            background-color: #2980b9;
+        }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 1.5em;
+                padding: 15px;
+            }
+            .day, .date {
+                padding: 10px 5px;
+                font-size: 0.9em;
+            }
+            #month-year {
+                font-size: 1.2em;
+            }
+            .booking-item {
+                padding: 15px;
+            }
+            .modal-content {
+                margin: 5% auto;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ระบบจองคิวช่างภาพ</h1>
+
+        <div id="calendar-container">
+
+    <div class="container">
+        <h1>ปฎิทินรายการจองเดือนนี้</h1>
+
+        <div id="calendar-container">
+            <div id="calendar-header">
+                <button id="prev-month"><</button>
+                <h2 id="month-year"></h2>
+                <button id="next-month">></button>
+            </div>
+            <div id="calendar-days">
+                <div class="day">อา</div>
+                <div class="day">จ</div>
+                <div class="day">อ</div>
+                <div class="day">พ</div>
+                <div class="day">พฤ</div>
+                <div class="day">ศ</div>
+                <div class="day">ส</div>
+            </div>
+            <div id="calendar"></div>
+        </div>
+
+        <div id="booking-list-container">
+            <h2>รายการจองเดือนนี้</h2>
+            <div id="booking-list"></div>
+        </div>
+    </div>
+
+    <!-- Modal สำหรับฟอร์มจอง/แก้ไข -->
+    <div id="booking-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="modal-title">จองคิว</h3>
+            <form id="booking-form">
+                <input type="hidden" id="booking-id">
+                <label for="booking-date">วันที่:</label>
+                <input type="date" id="booking-date" required readonly>
+
+                <label for="name">ชื่อ-นามสกุล:</label>
+                <input type="text" id="name" required>
+
+                <label for="address">ที่อยู่/สถานที่:</label>
+                <input type="text" id="address" required>
+
+                <label for="duration">ระยะเวลา (เช่น เต็มวัน, ครึ่งวันเช้า):</label>
+                <input type="text" id="duration">
+
+                <label for="google-maps-link">ลิงก์ Google Maps:</label>
+                <input type="url" id="google-maps-link" placeholder="https://maps.app.goo.gl/...">
+
+                <label for="photographer-count">จำนวนช่างภาพ:</label>
+                <input type="number" id="photographer-count" min="1" required>
+
+                <label for="videographer-count">จำนวนช่างวิดีโอ (ถ้ามี):</label>
+                <input type="number" id="videographer-count" min="0" placeholder="0">
+
+                <label for="price">ราคา:</label>
+                <input type="number" id="price" min="0">
+
+                <button type="submit">ยืนยันการจอง</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
